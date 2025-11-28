@@ -51,10 +51,15 @@ def calcular_ISA_argumentacion(df):
     df["DIM2"] = _calcular_dim(df, DIM2_cols)
     df["DIM3"] = _calcular_dim(df, DIM3_cols)
 
+    # ISA bruto
     df["ISA_raw"] = 0.25 * df["DIM1"] + 0.40 * df["DIM2"] + 0.35 * df["DIM3"]
 
+    # Normalizar a 0–100 (robusto para 1 solo caso)
     mn, mx = df["ISA_raw"].min(), df["ISA_raw"].max()
-    df["ISA_0_100"] = (df["ISA_raw"] - mn) / (mx - mn) * 100
+    if mx == mn:
+        df["ISA_0_100"] = 50.0  # punto neutro cuando no hay variación
+    else:
+        df["ISA_0_100"] = (df["ISA_raw"] - mn) / (mx - mn) * 100
 
     return df
 
@@ -67,6 +72,9 @@ def obtener_indices_desde_texto(texto: str) -> pd.DataFrame:
     """
     Versión temporal simulada.
     Más adelante aquí se conectará el MetaSistema real.
+
+    Por ahora devuelve un perfil fijo "promedio",
+    solo para mostrar la estructura de la app.
     """
 
     datos_simulados = {
@@ -111,16 +119,18 @@ if st.button("Analizar Argumentación"):
     if len(texto.strip()) == 0:
         st.warning("Ingrese un texto primero.")
     else:
+        # 1) Obtener índices (simulado por ahora)
         df_indices = obtener_indices_desde_texto(texto)
 
+        # 2) Calcular ISA con el motor validado
         resultado = calcular_ISA_argumentacion(df_indices)
-        puntaje = resultado["ISA_0_100"].iloc[0]
+        puntaje = float(resultado["ISA_0_100"].iloc[0])
 
-        dim1 = resultado["DIM1"].iloc[0]
-        dim2 = resultado["DIM2"].iloc[0]
-        dim3 = resultado["DIM3"].iloc[0]
+        dim1 = float(resultado["DIM1"].iloc[0])
+        dim2 = float(resultado["DIM2"].iloc[0])
+        dim3 = float(resultado["DIM3"].iloc[0])
 
-        # Interpretación
+        # 3) Interpretación del puntaje
         if puntaje >= 75:
             nivel = "Excelente"
             color = "green"
@@ -142,8 +152,9 @@ if st.button("Analizar Argumentación"):
         st.write(f"- **DIM2 – Riqueza léxica / Cohesión**: `{dim2:.3f}`")
         st.write(f"- **DIM3 – Organización proposicional**: `{dim3:.3f}`")
 
-        st.progress(min(puntaje / 100, 1.0))
+        # Barra de progreso (solo si el puntaje es válido)
+        if not np.isnan(puntaje):
+            st.progress(min(max(puntaje / 100.0, 0.0), 1.0))
 
         st.write("---")
         st.caption("Motor ISA_v1 calibrado con corpus real (A–J) usando TRUNAJOD–Analiza–Interpreta.")
-
