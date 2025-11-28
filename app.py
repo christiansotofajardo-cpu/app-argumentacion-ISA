@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 
 
@@ -11,14 +10,12 @@ from sklearn.impute import SimpleImputer
 
 def _calcular_dim(df, columnas):
     """
-    Normaliza (z-score) y promedia las columnas indicadas
-    para construir una dimensión.
+    Calcula una dimensión como el promedio de las columnas indicadas.
+    (Sin z-score, para que no quede en 0.0 con un solo caso.)
     """
     imp = SimpleImputer(strategy="mean")
-    vals = imp.fit_transform(df[columnas])
-    scaler = StandardScaler()
-    vals_scaled = scaler.fit_transform(vals)
-    return vals_scaled.mean(axis=1)
+    vals = imp.fit_transform(df[columnas].astype(float))
+    return vals.mean(axis=1)
 
 
 def calcular_ISA_argumentacion(df):
@@ -147,7 +144,7 @@ if st.button("Analizar Argumentación"):
         st.markdown(f"## 🎯 Puntaje ISA: **{puntaje:.1f} / 100**")
         st.markdown(f"### Nivel de Desempeño: **:{color}[{nivel}]**")
 
-        st.write("### 📊 Dimensiones Internas (z-score)")
+        st.write("### 📊 Dimensiones Internas (escala interna)")
         st.write(f"- **DIM1 – Profundidad / Desarrollo**: `{dim1:.3f}`")
         st.write(f"- **DIM2 – Riqueza léxica / Cohesión**: `{dim2:.3f}`")
         st.write(f"- **DIM3 – Organización proposicional**: `{dim3:.3f}`")
